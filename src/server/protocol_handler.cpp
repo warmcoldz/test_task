@@ -1,6 +1,6 @@
 #include "protocol_handler.h"
 #include <core/exception.h>
-#include <core/endian.h>
+#include <core/network_reader.h>
 #include <protocol/record_builder.h>
 
 using namespace app::core;
@@ -19,7 +19,7 @@ public:
         CHECK(version == 1, "Unexpected version");
         const auto clientIdLength{ reader.Read<uint8_t>() };
         m_clientId = reader.ReadAsString(clientIdLength);
-        m_tokenCount = reader.Read<uint32_t>();
+        m_tokenCount = reader.Read<uint16_t>();
     }
 
 public:
@@ -28,14 +28,14 @@ public:
         return m_clientId;
     }
 
-    uint32_t GetTokenCount() const
+    uint16_t GetTokenCount() const
     {
         return m_tokenCount;
     }
 
 private:
     std::string m_clientId;
-    uint32_t m_tokenCount;
+    uint16_t m_tokenCount;
 };
 
 class TokenRecord

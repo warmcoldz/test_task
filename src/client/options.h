@@ -9,7 +9,7 @@ struct Options
 {
     std::string clientId;
     std::string path;
-    uint32_t tokenCount;
+    uint16_t tokenCount;
     std::string ipAddress;
     uint32_t port;
 };

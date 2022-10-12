@@ -25,7 +25,7 @@ public:
     }
 
 private:
-    std::vector<uint8_t> MakeGreetingsPayload(const std::string& clientId, uint32_t tokenCount)
+    std::vector<uint8_t> MakeGreetingsPayload(const std::string& clientId, uint16_t tokenCount)
     {
         constexpr uint8_t Version{ 1 };
 

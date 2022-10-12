@@ -1,5 +1,5 @@
 #include "record_parser.h"
-#include <core/endian.h>
+#include <core/network_reader.h>
 #include <core/assert.h>
 
 using namespace app::core;

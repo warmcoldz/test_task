@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Boost REQUIRED COMPONENTS program_options coroutine)
 
+add_subdirectory(external/googletest)
 add_subdirectory(src/common)
 add_subdirectory(src/client)
 add_subdirectory(src/server)

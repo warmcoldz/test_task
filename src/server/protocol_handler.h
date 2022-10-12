@@ -37,7 +37,7 @@ private:
     uint16_t m_port;
 
     std::string m_clientId;
-    uint32_t m_tokensToProcess{ 0 };
+    uint16_t m_tokensToProcess{ 0 };
 };
 
 } // namespace app::server
