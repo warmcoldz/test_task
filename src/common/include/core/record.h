@@ -28,6 +28,11 @@ public:
         return m_type;
     }
 
+    const std::vector<uint8_t>& GetPayload() const
+    {
+        return m_payload;
+    }
+
 private:
     const std::vector<uint8_t> m_payload;
     const Type m_type;

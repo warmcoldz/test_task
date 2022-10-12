@@ -25,11 +25,11 @@ void ClientSession::Run()
                     static constexpr size_t BufferSize{ 1024 };
                     std::array<uint8_t, BufferSize> buffer;
 
-                    ProtocolHandler handler;
+                    ProtocolHandler handler{ m_socket.remote_endpoint() };
 
                     auto sender{ [&](const std::vector<uint8_t>& range) {
                             boost::asio::async_write(m_socket, boost::asio::buffer(range), yield);
-                        }};
+                        } };
 
                     while (true)
                     {
@@ -43,6 +43,7 @@ void ClientSession::Run()
                 {
                     std::cerr << e.what() << std::endl;
                     m_socket.close();
+                    std::cerr << "Connection closed" << std::endl;
                 }
             });
 }

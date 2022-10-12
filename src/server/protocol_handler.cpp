@@ -34,10 +34,10 @@ void ProtocolHandler::ProcessGreetings(core::Record& record, Sender sendData)
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
     std::clog << "[Ready] sending" << std::endl;
-
     sendData(MakeReadyRecord());
+    std::clog << "[Ready] sending DONE" << std::endl;
 
-    std::clog << "[Ready] sending done" << std::endl;
+    m_state = State::WaitingToken;
 }
 
 void ProtocolHandler::ProcessToken(core::Record& record)
@@ -48,7 +48,7 @@ void ProtocolHandler::ProcessToken(core::Record& record)
 
 void ProtocolHandler::ProcessUnexpectedRecord(core::Record& record)
 {
-    std::clog << "[Record 0x" << std::hex << record.GetType() << "] received" << std::endl;
+    std::clog << "[Record " << record.GetType() << "] received" << std::endl;
     throw std::runtime_error{ "Unexpected record type" };
 }
 

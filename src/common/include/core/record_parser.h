@@ -8,9 +8,6 @@
 
 namespace app::core {
 
-using RecordPayloadSize = uint16_t;
-inline constexpr size_t RecordHeaderSize{ sizeof(RecordPayloadSize) + sizeof(uint8_t) };
-
 class RecordParser
 {
 public:
@@ -24,6 +21,9 @@ private:
     bool IsPayloadCollected() const;
 
 private:
+    using RecordPayloadSize = uint16_t;
+    static constexpr size_t RecordHeaderSize{ sizeof(RecordPayloadSize) + sizeof(Record::Type) };
+
     size_t m_headerBufferSize{ 0 };
     RecordPayloadSize m_expectedPayloadSize{ 0 };
 

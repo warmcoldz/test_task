@@ -9,7 +9,7 @@ using ConstBlobRange = boost::iterator_range<const uint8_t*>;
 template <typename Range>
 ConstBlobRange MakeConstBlobRange(const Range& data)
 {
-    return { data.data(), data.data() + data.size() };
+    return { std::begin(data), std::begin(data) + std::size(data) };
 }
 
 template <typename Iterator>

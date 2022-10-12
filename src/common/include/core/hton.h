@@ -3,9 +3,36 @@
 #include "range.h"
 #include "assert.h"
 #include <type_traits>
+#include <iterator>
 #include <endian.h>
 
 namespace app::core {
+
+template <typename Integer>
+Integer HostToNetwork(Integer value)
+{
+    static_assert(
+        std::is_same_v<uint8_t, Integer>
+            || std::is_same_v<uint16_t, Integer>
+            || std::is_same_v<uint32_t, Integer>
+            || std::is_same_v<uint64_t, Integer>,
+        "value must be unsigned integral");
+
+    if (std::is_same_v<uint16_t, Integer>)
+    {
+        return ::htobe16(value);
+    }
+    else if (std::is_same_v<uint32_t, Integer>)
+    {
+        return ::htobe32(value);
+    }
+    else if (std::is_same_v<uint64_t, Integer>)
+    {
+        return ::htobe64(value);
+    }
+    
+    return value;
+}
 
 template <typename Integer>
 Integer NetworkToHost(Integer value)

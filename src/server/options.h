@@ -7,9 +7,9 @@ namespace app::server {
 
 struct Options
 {
-    uint16_t port;
     uint32_t threadCount;
     std::string ipAddress;
+    uint16_t port;
 };
 
 } // namespace app::server

@@ -2,6 +2,7 @@
 
 #include <core/record_parser.h>
 #include <core/range.h>
+#include <boost/asio/ip/tcp.hpp>
 #include <vector>
 #include <iostream>
 
@@ -11,6 +12,14 @@ using Sender = std::function<void(const std::vector<uint8_t>&)>;
 
 class ProtocolHandler
 {
+public:
+    explicit ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint)
+        : m_ipAddress{ endpoint.address().to_string() }
+        , m_port{ endpoint.port() }
+    {
+        std::clog << m_ipAddress << ":" << m_port << std::endl;
+    }
+
 public:
     void ProcessData(core::ConstBlobRange data, Sender sendData);
 
@@ -29,6 +38,12 @@ private:
 
     State m_state{ State::WaitingGreetings };
     core::RecordParser m_recordParser;
+
+    std::string m_ipAddress;
+    uint16_t m_port;
+
+    //int expectedTokens{ 0 };
+    //std::string clientId;
 };
 
 } // namespace app::server

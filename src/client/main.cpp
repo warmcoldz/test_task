@@ -1,12 +1,13 @@
+#include "client.h"
 #include "options.h"
-#include "listen_server.h"
 #include <core/program_options.h>
+#include <boost/system/system_error.hpp>
 #include <iostream>
 #include <string>
 
 using namespace std::string_literals;
 
-namespace app::server {
+namespace app::client {
 
 struct OptionsTraits
 {
@@ -15,14 +16,14 @@ struct OptionsTraits
     static boost::program_options::options_description CreateDescription()
     {
         constexpr uint16_t DefaultPort{ 33337 };
-        constexpr uint32_t DefaultThreadCount{ 4 };
-        const auto IpAddressAny{ "0.0.0.0"s };
 
         boost::program_options::options_description desc("Allowed options");
         desc.add_options()
             ("help", "produce help message")
-            ("threads,t", boost::program_options::value<decltype(Options::threadCount)>()->default_value(DefaultThreadCount), "thread count.")
-            ("ip", boost::program_options::value<decltype(Options::ipAddress)>()->default_value(IpAddressAny), "ip address.")
+            ("id", boost::program_options::value<decltype(Options::clientId)>()->required(), "client id.")
+            ("path", boost::program_options::value<decltype(Options::path)>()->required(), "path.")
+            ("token_count,n", boost::program_options::value<decltype(Options::tokenCount)>()->required(), "token count.")
+            ("ip", boost::program_options::value<decltype(Options::ipAddress)>()->required(), "ip address.")
             ("port,p", boost::program_options::value<decltype(Options::port)>()->default_value(DefaultPort), "listen on a port.")
         ;
 
@@ -32,7 +33,9 @@ struct OptionsTraits
     static Options GetOptions(const boost::program_options::variables_map& vm)
     {
         Options options;
-        options.threadCount = vm["threads"s].as<decltype(options.threadCount)>();
+        options.clientId = vm["id"s].as<decltype(options.clientId)>();
+        options.path = vm["path"s].as<decltype(options.path)>();
+        options.tokenCount = vm["token_count"s].as<decltype(options.tokenCount)>();
         options.ipAddress = vm["ip"s].as<decltype(options.ipAddress)>();
         options.port = vm["port"s].as<decltype(options.port)>();
         return options;
@@ -40,36 +43,27 @@ struct OptionsTraits
 };
 
 
-void RunServer(const Options& options)
+void RunClient(const Options& options)
 {
-    ListenServer s{ options };
-    s.Run();
+    Client client{ options };
+    client.Run();
 }
 
 int main(int argc, char* argv[])
 {
     core::ProgramOptionsParser<OptionsTraits> programOptionsParser{ argc, argv };
-
-    if (programOptionsParser.HelpRequested())
-    {
-        programOptionsParser.PrintHelp();
-    }
-    else
-    {
-        RunServer(programOptionsParser.GetOptions());
-    }
-
+    RunClient(programOptionsParser.GetOptions());
     return 0;
 }
 
-} // namespace app::server
+} // namespace app::client
 
 
 int main(int argc, char* argv[])
 {
     try
     {
-        return app::server::main(argc, argv);
+        return app::client::main(argc, argv);
     }
     catch (const boost::system::system_error& e)
     {
