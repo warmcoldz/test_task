@@ -21,20 +21,45 @@ public:
 
     std::string GetArbitraryToken()
     {
-        std::string line;
-
-        const bool lineRead{ std::getline(m_file, line) };
-        if (lineRead && !line.empty())
+        if (!EofReached())
         {
-            m_readTokens.push_back(std::move(line));
-            return m_readTokens.back();
+            std::string token;
+            if (ReadTokenFromFile(token))
+                return token;
+        }
+        
+        return GetRandomTokenFromMemory();
+    }
+
+private:
+    bool EofReached() const
+    {
+        return m_eofReached;
+    }
+
+    bool ReadTokenFromFile(std::string& token)
+    {
+        while (std::getline(m_file, token))
+        {
+            if (!token.empty())
+            {
+                m_readTokens.push_back(token);
+                return true;
+            }
         }
 
+        m_eofReached = true;
         CHECK(!m_readTokens.empty(), "No tokens provided");
+        return false;
+    }
+
+    std::string GetRandomTokenFromMemory() const
+    {
         return m_readTokens[std::rand() % m_readTokens.size()];
     }
 
 private:
+    bool m_eofReached{ false };
     std::ifstream m_file;
     std::vector<std::string> m_readTokens;
 };

@@ -90,15 +90,6 @@ public:
         return value;
     }
 
-    ConstBlobRange Read(size_t bytes)
-    {
-        CheckBoundaries(bytes);
-
-        auto range{ MakeConstBlobRange(m_data.begin(), + bytes) };
-        m_data.advance_begin(bytes);
-        return range;
-    }
-
     std::string ReadAsString(size_t bytes)
     {
         CheckBoundaries(bytes);

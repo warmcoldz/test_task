@@ -25,7 +25,7 @@ void Client::Run()
                 try
                 {
                     boost::asio::ip::tcp::socket socket{ m_ioContext };
-                    Session session{m_options, socket, yield};
+                    Session session{ m_options, socket, yield };
 
                     std::clog << "Connecting to server: " << m_options.ipAddress << ":" << m_options.port << std::endl;
 

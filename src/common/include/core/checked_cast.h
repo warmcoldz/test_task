@@ -16,7 +16,7 @@ OutputInteger CheckedStaticCast(InputInteger value)
     CHECK(
         value >= std::numeric_limits<OutputInteger>::min() &&
         value <= std::numeric_limits<OutputInteger>::max(),
-            "StaticCast failed");
+            "Static cast failed for " + std::to_string(value));
 
     return static_cast<OutputInteger>(value);
 }
