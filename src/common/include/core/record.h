@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <core/range.h>
 
 namespace app::core {
 
@@ -28,9 +29,9 @@ public:
         return m_type;
     }
 
-    const std::vector<uint8_t>& GetPayload() const
+    ConstBlobRange GetPayload() const
     {
-        return m_payload;
+        return MakeConstBlobRange(m_payload);
     }
 
 private:

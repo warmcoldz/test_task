@@ -80,7 +80,7 @@ void Session::ReceiveReadyRecord()
     std::array<uint8_t, HeaderSize> recordBuffer;
 
     boost::asio::async_read(m_socket, boost::asio::buffer(recordBuffer), boost::asio::transfer_exactly(HeaderSize), m_yield);
-    CheckReadyRecord(MakeConstBlobRange(recordBuffer));
+    CheckReadyRecord(MakeConstBlobRange(recordBuffer.data(), recordBuffer.size()));
 }
 
 void Session::SendTokens()
