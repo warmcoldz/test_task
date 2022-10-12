@@ -13,21 +13,18 @@ template <typename Integer>
 Integer HostToNetwork(Integer value)
 {
     static_assert(
-        std::is_same_v<uint8_t, Integer>
-            || std::is_same_v<uint16_t, Integer>
-            || std::is_same_v<uint32_t, Integer>
-            || std::is_same_v<uint64_t, Integer>,
+        std::is_integral_v<Integer> && std::is_unsigned_v<Integer>,
         "value must be unsigned integral");
 
-    if (std::is_same_v<uint16_t, Integer>)
+    if constexpr (std::is_same_v<uint16_t, Integer>)
     {
         return ::htobe16(value);
     }
-    else if (std::is_same_v<uint32_t, Integer>)
+    else if constexpr (std::is_same_v<uint32_t, Integer>)
     {
         return ::htobe32(value);
     }
-    else if (std::is_same_v<uint64_t, Integer>)
+    else if constexpr (std::is_same_v<uint64_t, Integer>)
     {
         return ::htobe64(value);
     }
@@ -39,21 +36,18 @@ template <typename Integer>
 Integer NetworkToHost(Integer value)
 {
     static_assert(
-        std::is_same_v<uint8_t, Integer>
-            || std::is_same_v<uint16_t, Integer>
-            || std::is_same_v<uint32_t, Integer>
-            || std::is_same_v<uint64_t, Integer>,
+        std::is_integral_v<Integer> && std::is_unsigned_v<Integer>,
         "value must be unsigned integral");
 
-    if (std::is_same_v<uint16_t, Integer>)
+    if constexpr (std::is_same_v<uint16_t, Integer>)
     {
         return ::be16toh(value);
     }
-    else if (std::is_same_v<uint32_t, Integer>)
+    else if constexpr (std::is_same_v<uint32_t, Integer>)
     {
         return ::be32toh(value);
     }
-    else if (std::is_same_v<uint64_t, Integer>)
+    else if constexpr (std::is_same_v<uint64_t, Integer>)
     {
         return ::be64toh(value);
     }

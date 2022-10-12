@@ -25,21 +25,19 @@ void Client::Run()
                 try
                 {
                     boost::asio::ip::tcp::socket socket{ m_ioContext };
-                    Session session{ m_options, socket, yield };
-
-                    std::clog << "Connecting to server: " << m_options.ipAddress << ":" << m_options.port << std::endl;
-
                     boost::asio::ip::tcp::resolver resolver{ m_ioContext };                    
                     const auto results{ resolver.async_resolve(m_options.ipAddress, std::to_string(m_options.port), yield) };
-                    boost::asio::async_connect(socket, results, yield);
 
+                    Session session{ m_options, socket, yield };
+                    std::clog << "Connecting to server: " << m_options.ipAddress << ":" << m_options.port << std::endl;
+                    boost::asio::async_connect(socket, results, yield);
                     std::clog << "Connecting to server OK" << std::endl;
-                    
+
                     session.SendGreetings();
                     session.ReceiveReadyRecord();
                     session.SendTokens();
 
-                    std::cout << "Graceful shutdown" << std::endl;
+                    std::clog << "Graceful shutdown" << std::endl;
                     socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
                 }
                 catch(const std::exception& e)

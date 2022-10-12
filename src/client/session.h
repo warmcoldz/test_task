@@ -33,8 +33,8 @@ private:
     boost::asio::ip::tcp::socket& m_socket;
     boost::asio::yield_context& m_yield;
     TokenDataBase m_tokenDataBase;
-    uint32_t m_counter{ 0 };
     protocol::RecordBuilder m_recordBuilder;
+    uint32_t m_counter{ 0 };
 };
 
 } // namespace app::client

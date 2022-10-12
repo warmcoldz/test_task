@@ -23,8 +23,6 @@ void Append(Container& cont, const Range& range)
 template <typename Integer, typename Container>
 void AppendIntegerInNetworkOrder(Container& cont, Integer value)
 {
-    static_assert(std::is_integral_v<Integer>);
-
     const Integer networkValue{ HostToNetwork(value) };
     const auto begin{ reinterpret_cast<const uint8_t*>(&networkValue) };
     detail::AppendImpl(cont, begin, begin + sizeof(networkValue));
