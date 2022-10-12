@@ -1,8 +1,10 @@
-#include <core/record_parser.h>
-#include <core/hton.h>
-#include "assert.h"
+#include "record_parser.h"
+#include <core/endian.h>
+#include <core/assert.h>
 
-namespace app::core {
+using namespace app::core;
+
+namespace app::server {
 
 std::optional<Record> RecordParser::ProcessData(ConstBlobRange& data)
 {
@@ -60,7 +62,7 @@ Record RecordParser::CreateRecord()
     payloadBuffer.swap(m_payloadBuffer);
 
     const auto type{ NetworkRead<uint8_t>(m_headerBuffer, /*offset*/ sizeof(RecordPayloadSize)) };
-    return { std::move(payloadBuffer), type };
+    return { std::move(payloadBuffer), static_cast<protocol::RecordType>(type) };
 }
 
 bool RecordParser::IsPayloadCollected() const
@@ -68,4 +70,4 @@ bool RecordParser::IsPayloadCollected() const
     return m_payloadBuffer.size() == m_expectedPayloadSize;
 }
 
-} // namespace app::core
+} // namespace app::server

@@ -1,7 +1,7 @@
 #include "session.h"
 #include <core/checked_cast.h>
 #include <core/algo.h>
-#include <core/record_parser.h>
+#include <protocol/record_type.h>
 
 using namespace app::core;
 
@@ -30,7 +30,7 @@ std::vector<uint8_t> MakeTokenPayload(const std::string& token)
     return payload;
 }
 
-std::vector<uint8_t> MakeRecord(Record::Type type, const std::vector<uint8_t>& payload = {})
+std::vector<uint8_t> MakeRecord(protocol::RecordType type, const std::vector<uint8_t>& payload = {})
 {
     std::vector<uint8_t> record;
     AppendIntegerInNetworkOrder<uint16_t>(record, payload.size());
@@ -41,17 +41,17 @@ std::vector<uint8_t> MakeRecord(Record::Type type, const std::vector<uint8_t>& p
 
 std::vector<uint8_t> MakeGreetingsRecord(const std::string& clientId, uint32_t tokenCount)
 {
-    return MakeRecord(Record::Greetings, MakeGreetingsPayload(clientId, tokenCount));
+    return MakeRecord(protocol::RecordType::Greetings, MakeGreetingsPayload(clientId, tokenCount));
 }
 
 std::vector<uint8_t> MakeReadyRecord()
 {
-    return MakeRecord(Record::Ready);
+    return MakeRecord(protocol::RecordType::Ready);
 }
 
 std::vector<uint8_t> MakeTokenRecord(const std::string& token)
 {
-    return MakeRecord(Record::Token, MakeTokenPayload(token));
+    return MakeRecord(protocol::RecordType::Token, MakeTokenPayload(token));
 }
 
 } // namespace
@@ -80,7 +80,7 @@ void Session::ReceiveReadyRecord()
     std::array<uint8_t, HeaderSize> recordBuffer;
 
     boost::asio::async_read(m_socket, boost::asio::buffer(recordBuffer), boost::asio::transfer_exactly(HeaderSize), m_yield);
-    CheckReadyRecord(MakeConstBlobRange(recordBuffer.data(), recordBuffer.size()));
+    ValidateReadyRecord(MakeConstBlobRange(recordBuffer.data(), recordBuffer.size()));
 }
 
 void Session::SendTokens()
@@ -92,7 +92,7 @@ void Session::SendTokens()
     }
 }
 
-void Session::CheckReadyRecord(ConstBlobRange record)
+void Session::ValidateReadyRecord(ConstBlobRange record)
 {
     CHECK(boost::range::equal(MakeReadyRecord(), record), "Expected ready record");
 }

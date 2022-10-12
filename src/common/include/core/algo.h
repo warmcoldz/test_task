@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hton.h"
+#include "endian.h"
 #include <iterator>
 
 namespace app::core {
@@ -16,7 +16,7 @@ void AppendIntegerInNetworkOrder(Container& cont, Integer value)
 {
     static_assert(std::is_integral_v<Integer>);
 
-    const Integer networkValue{ core::HostToNetwork(value) };
+    const Integer networkValue{ HostToNetwork(value) };
 
     const auto begin{ reinterpret_cast<const uint8_t*>(&networkValue) };
     cont.insert(std::cend(cont), begin, begin + sizeof(networkValue));

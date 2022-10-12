@@ -24,7 +24,7 @@ public:
     void SendTokens();
 
 private:
-    void CheckReadyRecord(core::ConstBlobRange record);
+    void ValidateReadyRecord(core::ConstBlobRange record);
     void SendToken(const std::string& token);
 
 private:

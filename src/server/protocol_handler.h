@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/record_parser.h>
+#include "record_parser.h"
 #include <core/range.h>
 #include <boost/asio/ip/tcp.hpp>
 #include <vector>
@@ -24,9 +24,9 @@ public:
     void ProcessData(core::ConstBlobRange data, Sender sendData);
 
 private:
-    void ProcessGreetings(core::Record& frame, Sender sendData);
-    void ProcessToken(core::Record& frame);
-    void ProcessUnexpectedRecord(core::Record& frame);
+    void ProcessGreetings(Record& frame, Sender sendData);
+    void ProcessToken(Record& frame);
+    void ProcessUnexpectedRecord(Record& frame);
     static const std::vector<uint8_t>& MakeReadyRecord();
 
 private:
@@ -37,7 +37,7 @@ private:
     };
 
     State m_state{ State::WaitingGreetings };
-    core::RecordParser m_recordParser;
+    RecordParser m_recordParser;
 
     std::string m_ipAddress;
     uint16_t m_port;

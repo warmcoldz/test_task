@@ -1,6 +1,7 @@
 #include "protocol_handler.h"
 #include <core/exception.h>
-#include <core/hton.h>
+#include <core/endian.h>
+#include <protocol/record_type.h>
 
 using namespace app::core;
 
@@ -59,20 +60,20 @@ private:
 };
 
 
-void ProtocolHandler::ProcessData(core::ConstBlobRange data, Sender sendData)
+void ProtocolHandler::ProcessData(ConstBlobRange data, Sender sendData)
 {
     while (!data.empty())
     {
-        std::optional<core::Record> record{ m_recordParser.ProcessData(data) };
+        std::optional<Record> record{ m_recordParser.ProcessData(data) };
         if (record.has_value())
         {
             switch (record->GetType())
             {
-                case core::Record::Greetings:
+                case protocol::RecordType::Greetings:
                     ProcessGreetings(*record, sendData);
                     break;
 
-                case core::Record::Token:
+                case protocol::RecordType::Token:
                     ProcessToken(*record);
                     break;
                 
@@ -84,7 +85,7 @@ void ProtocolHandler::ProcessData(core::ConstBlobRange data, Sender sendData)
     }
 }
 
-void ProtocolHandler::ProcessGreetings(core::Record& record, Sender sendData)
+void ProtocolHandler::ProcessGreetings(Record& record, Sender sendData)
 {
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
@@ -102,7 +103,7 @@ void ProtocolHandler::ProcessGreetings(core::Record& record, Sender sendData)
     m_state = State::WaitingToken;
 }
 
-void ProtocolHandler::ProcessToken(core::Record& record)
+void ProtocolHandler::ProcessToken(Record& record)
 {
     CHECK(m_state == State::WaitingToken, "Expected Token record");
 
@@ -110,7 +111,7 @@ void ProtocolHandler::ProcessToken(core::Record& record)
     std::clog << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
 }
 
-void ProtocolHandler::ProcessUnexpectedRecord(core::Record& record)
+void ProtocolHandler::ProcessUnexpectedRecord(Record& record)
 {
     std::clog << "[Record " << record.GetType() << "] received" << std::endl;
     throw std::runtime_error{ "Unexpected record type" };
@@ -120,7 +121,7 @@ const std::vector<uint8_t>& ProtocolHandler::MakeReadyRecord()
 {
     const static std::vector<uint8_t> ReadyRecord {
         0x00, 0x00, // RecordPayloadSize
-        core::Record::Ready // Type
+        protocol::RecordType::Ready // Type
     };
 
     return ReadyRecord;
