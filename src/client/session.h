@@ -3,6 +3,7 @@
 #include "options.h"
 #include "token_data_base.h"
 #include <core/range.h>
+#include <protocol/record_builder.h>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/range/algorithm/equal.hpp>
@@ -32,6 +33,8 @@ private:
     boost::asio::ip::tcp::socket& m_socket;
     boost::asio::yield_context& m_yield;
     TokenDataBase m_tokenDataBase;
+    uint32_t m_counter{ 0 };
+    protocol::RecordBuilder m_recordBuilder;
 };
 
 } // namespace app::client

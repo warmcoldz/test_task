@@ -1,3 +1,5 @@
+#pragma once
+
 #include "exception.h"
 #include <type_traits>
 #include <limits>

@@ -1,7 +1,7 @@
 #include "protocol_handler.h"
 #include <core/exception.h>
 #include <core/endian.h>
-#include <protocol/record_type.h>
+#include <protocol/record_builder.h>
 
 using namespace app::core;
 
@@ -60,6 +60,13 @@ private:
 };
 
 
+ProtocolHandler::ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint)
+    : m_ipAddress{ endpoint.address().to_string() }
+    , m_port{ endpoint.port() }
+{
+    std::clog << "Accepted connection from: " << endpoint << std::endl;
+}
+
 void ProtocolHandler::ProcessData(ConstBlobRange data, Sender sendData)
 {
     while (!data.empty())
@@ -96,35 +103,31 @@ void ProtocolHandler::ProcessGreetings(Record& record, Sender sendData)
         << "] received"
         << std::endl;
 
+    protocol::RecordBuilder recordBuilder;
+
     std::clog << "[Ready] sending" << std::endl;
-    sendData(MakeReadyRecord());
+    sendData(recordBuilder.MakeReadyRecord());
     std::clog << "[Ready] sending DONE" << std::endl;
 
+    m_clientId = greetingsRecord.GetClientId();
+    m_tokensToProcess = greetingsRecord.GetTokenCount();
     m_state = State::WaitingToken;
 }
 
 void ProtocolHandler::ProcessToken(Record& record)
 {
-    CHECK(m_state == State::WaitingToken, "Expected Token record");
+    CHECK(m_state == State::WaitingToken, "Unexpected token record - waiting other record");
+    CHECK(m_tokensToProcess != 0, "Unexpected token - all tokens handled");
 
     TokenRecord tokenRecord{ record };
     std::clog << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
+    --m_tokensToProcess;
 }
 
 void ProtocolHandler::ProcessUnexpectedRecord(Record& record)
 {
     std::clog << "[Record " << record.GetType() << "] received" << std::endl;
     throw std::runtime_error{ "Unexpected record type" };
-}
-
-const std::vector<uint8_t>& ProtocolHandler::MakeReadyRecord()
-{
-    const static std::vector<uint8_t> ReadyRecord {
-        0x00, 0x00, // RecordPayloadSize
-        protocol::RecordType::Ready // Type
-    };
-
-    return ReadyRecord;
 }
 
 } // namespace app::server

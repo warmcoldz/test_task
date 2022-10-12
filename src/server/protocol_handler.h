@@ -13,12 +13,7 @@ using Sender = std::function<void(const std::vector<uint8_t>&)>;
 class ProtocolHandler
 {
 public:
-    explicit ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint)
-        : m_ipAddress{ endpoint.address().to_string() }
-        , m_port{ endpoint.port() }
-    {
-        std::clog << m_ipAddress << ":" << m_port << std::endl;
-    }
+    explicit ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint);
 
 public:
     void ProcessData(core::ConstBlobRange data, Sender sendData);
@@ -27,7 +22,6 @@ private:
     void ProcessGreetings(Record& frame, Sender sendData);
     void ProcessToken(Record& frame);
     void ProcessUnexpectedRecord(Record& frame);
-    static const std::vector<uint8_t>& MakeReadyRecord();
 
 private:
     enum class State
@@ -42,8 +36,8 @@ private:
     std::string m_ipAddress;
     uint16_t m_port;
 
-    //int expectedTokens{ 0 };
-    //std::string clientId;
+    std::string m_clientId;
+    uint32_t m_tokensToProcess{ 0 };
 };
 
 } // namespace app::server

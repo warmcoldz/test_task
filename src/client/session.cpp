@@ -1,61 +1,11 @@
 #include "session.h"
 #include <core/checked_cast.h>
 #include <core/algo.h>
-#include <protocol/record_type.h>
+#include <iostream>
 
 using namespace app::core;
 
 namespace app::client {
-namespace {
-
-std::vector<uint8_t> MakeGreetingsPayload(const std::string& clientId, uint32_t tokenCount)
-{
-    constexpr uint8_t Version{ 1 };
-
-    std::vector<uint8_t> payload;
-    payload.push_back(Version);
-    payload.push_back(CheckedStaticCast<uint8_t>(clientId.length()));
-    Append(payload, clientId);
-    AppendIntegerInNetworkOrder(payload, tokenCount);
-
-    return payload;
-}
-
-std::vector<uint8_t> MakeTokenPayload(const std::string& token)
-{
-    std::vector<uint8_t> payload;
-    payload.push_back(CheckedStaticCast<uint8_t>(token.length()));
-    Append(payload, token);
-
-    return payload;
-}
-
-std::vector<uint8_t> MakeRecord(protocol::RecordType type, const std::vector<uint8_t>& payload = {})
-{
-    std::vector<uint8_t> record;
-    AppendIntegerInNetworkOrder<uint16_t>(record, payload.size());
-    record.push_back(type);
-    Append(record, payload);
-    return record;
-}
-
-std::vector<uint8_t> MakeGreetingsRecord(const std::string& clientId, uint32_t tokenCount)
-{
-    return MakeRecord(protocol::RecordType::Greetings, MakeGreetingsPayload(clientId, tokenCount));
-}
-
-std::vector<uint8_t> MakeReadyRecord()
-{
-    return MakeRecord(protocol::RecordType::Ready);
-}
-
-std::vector<uint8_t> MakeTokenRecord(const std::string& token)
-{
-    return MakeRecord(protocol::RecordType::Token, MakeTokenPayload(token));
-}
-
-} // namespace
-
 
 Session::Session(
         const Options& options,
@@ -65,22 +15,33 @@ Session::Session(
     , m_socket{ socket }
     , m_yield{ yield }
     , m_tokenDataBase{ m_options.path }
+    , m_counter{ 0 }
 {
 }
 
 void Session::SendGreetings()
 {
-    const auto greetingsRecord{ MakeGreetingsRecord(m_options.clientId, m_options.tokenCount) };
+    ++m_counter;
+
+    std::clog << m_counter << ':' << "[Greetings: client_id=" << m_options.clientId << ", tokens=" << m_options.tokenCount << "] =>" << std::endl;
+
+    const auto greetingsRecord{ m_recordBuilder.MakeGreetingsRecord(m_options.clientId, m_options.tokenCount) };
     boost::asio::async_write(m_socket, boost::asio::buffer(greetingsRecord), m_yield);
+
+    std::clog << m_counter << ':' << "[Greetings] => OK" << std::endl;
 }
 
 void Session::ReceiveReadyRecord()
 {
+    ++m_counter;
+
     constexpr size_t HeaderSize{ 3 };
     std::array<uint8_t, HeaderSize> recordBuffer;
 
     boost::asio::async_read(m_socket, boost::asio::buffer(recordBuffer), boost::asio::transfer_exactly(HeaderSize), m_yield);
     ValidateReadyRecord(MakeConstBlobRange(recordBuffer.data(), recordBuffer.size()));
+
+    std::clog << m_counter << ':' << "[Ready] <=" << std::endl;
 }
 
 void Session::SendTokens()
@@ -94,13 +55,19 @@ void Session::SendTokens()
 
 void Session::ValidateReadyRecord(ConstBlobRange record)
 {
-    CHECK(boost::range::equal(MakeReadyRecord(), record), "Expected ready record");
+    CHECK(boost::range::equal(m_recordBuilder.MakeReadyRecord(), record), "Expected ready record");
 }
 
 void Session::SendToken(const std::string& token)
 {
-    const auto tokenRecord{ MakeTokenRecord(token) };
+    ++m_counter;
+
+    std::clog << m_counter << ':' << "[Token: " << token << "] =>" << std::endl;
+
+    const auto tokenRecord{ m_recordBuilder.MakeTokenRecord(token) };
     boost::asio::async_write(m_socket, boost::asio::buffer(tokenRecord), m_yield);
+
+    std::clog << m_counter << ':' << "[Token] => OK" << std::endl;
 }
 
 } // namespace app::client
