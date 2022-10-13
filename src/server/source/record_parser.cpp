@@ -8,16 +8,13 @@ namespace app::server {
 
 std::optional<Record> RecordParser::ProcessData(ConstBlobRange& data)
 {
-    if (!IsHeaderCollected())
+    if (IsHeaderCollected() || CollectHeader(data))
     {
-        if (!CollectHeader(data))
-            return std::nullopt;
+        if (CollectPayload(data))
+            return CreateRecord();
     }
-    
-    if (!CollectPayload(data))
-        return std::nullopt;
 
-    return CreateRecord();
+    return std::nullopt;
 }
 
 bool RecordParser::IsHeaderCollected() const

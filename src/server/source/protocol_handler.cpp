@@ -60,12 +60,15 @@ private:
 };
 
 
-ProtocolHandler::ProtocolHandler(std::unique_ptr<ISender> sender, const boost::asio::ip::tcp::endpoint& endpoint)
-    : m_sender{ std::move(sender) }
+ProtocolHandler::ProtocolHandler(
+        std::shared_ptr<ILogger> logger,
+        std::unique_ptr<ISender> sender,
+        const boost::asio::ip::tcp::endpoint& endpoint)
+    : m_logger{ std::move(logger) }
+    , m_sender{ std::move(sender) }
     , m_ipAddress{ endpoint.address().to_string() }
     , m_port{ endpoint.port() }
 {
-    std::clog << "Accepted connection from: " << endpoint << std::endl;
 }
 
 void ProtocolHandler::ProcessData(ConstBlobRange data)
@@ -98,7 +101,7 @@ void ProtocolHandler::ProcessGreetings(Record& record)
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
     const GreetingsRecord greetingsRecord{ record };
-    std::clog
+    m_logger->Log(Severity::Info)
         << "[Greetings: client_id=" << greetingsRecord.GetClientId()
         << ", tokens=" << greetingsRecord.GetTokenCount()
         << "] received"
@@ -106,9 +109,9 @@ void ProtocolHandler::ProcessGreetings(Record& record)
 
     protocol::RecordBuilder recordBuilder;
 
-    std::clog << "[Ready] sending" << std::endl;
+    m_logger->Log(Severity::Info) << "[Ready] sending" << std::endl;
     m_sender->Send(recordBuilder.MakeReadyRecord());
-    std::clog << "[Ready] sending DONE" << std::endl;
+    m_logger->Log(Severity::Info) << "[Ready] sending DONE" << std::endl;
 
     m_clientId = greetingsRecord.GetClientId();
     m_tokensToProcess = greetingsRecord.GetTokenCount();
@@ -120,7 +123,7 @@ void ProtocolHandler::ProcessToken(Record& record)
     CHECK(m_state == State::WaitingToken, "Unexpected token record");
 
     TokenRecord tokenRecord{ record };
-    std::clog << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
+    m_logger->Log(Severity::Info) << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
     --m_tokensToProcess;
 
     if (m_tokensToProcess == 0)
@@ -131,7 +134,7 @@ void ProtocolHandler::ProcessToken(Record& record)
 
 void ProtocolHandler::ProcessUnexpectedRecord(Record& record)
 {
-    std::clog << "[Record " << record.GetType() << "] received" << std::endl;
+    m_logger->Log(Severity::Info) << "[Record " << record.GetType() << "] received" << std::endl;
     throw std::runtime_error{ "Unexpected record type" };
 }
 

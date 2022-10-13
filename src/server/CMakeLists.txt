@@ -3,6 +3,7 @@ set (SOURCES
     source/client_session.cpp
     source/protocol_handler.cpp
     source/record_parser.cpp
+    source/logger.cpp
 )
 
 add_library(server_lib ${SOURCES})

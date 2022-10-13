@@ -1,5 +1,6 @@
 #include "listen_server.h"
 #include "client_session.h"
+#include "logger.h"
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <memory>
@@ -9,8 +10,9 @@ namespace app::server {
 class ListenServer : std::enable_shared_from_this<ListenServer>
 {
 public:
-    explicit ListenServer(const Options& options)
-        : m_options{ options }
+    ListenServer(std::shared_ptr<ILogger> logger, const Options& options)
+        : m_logger{ std::move(logger) }
+        , m_options{ options }
         , m_ioContext{ static_cast<int>(m_options.threadCount) }
     {
     }
@@ -22,15 +24,26 @@ public:
             m_ioContext,
             [&](boost::asio::yield_context yield)
                 {
+                    m_logger->Log(Severity::Info) << "Start listening" << std::endl;
+
                     auto acceptor{ Listen() };
+
+                    uint64_t sessionNumber{ 0 };
                     while (true)
                     {
                         boost::system::error_code ec;
                         boost::asio::ip::tcp::socket socket{ m_ioContext };
+
+                        m_logger->Log(Severity::Info) << "Waiting for client" << std::endl;
                         acceptor.async_accept(socket, yield[ec]);
                         if (!ec)
                         {
-                            std::make_shared<ClientSession>(m_ioContext, std::move(socket))->Run();
+                            ++sessionNumber;
+
+                            auto logger{ CreateLoggerWithPrefix(m_logger, "Session[" + std::to_string(sessionNumber) + "]: ") };
+                            logger->Log(Severity::Info) << "Created for " << socket.remote_endpoint() << std::endl;
+
+                            std::make_shared<ClientSession>(std::move(logger), m_ioContext, std::move(socket))->Run();
                         }
                     }
                 });
@@ -62,6 +75,7 @@ private:
     }
 
 private:
+    const std::shared_ptr<ILogger> m_logger;
     const Options m_options;
     boost::asio::io_context m_ioContext;
 };
@@ -69,7 +83,7 @@ private:
 
 void RunServer(const Options& options)
 {
-    ListenServer s{ options };
+    ListenServer s{ CreateLogger(), options };
     s.Run();
 }
 

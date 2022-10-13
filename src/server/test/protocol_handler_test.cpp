@@ -7,6 +7,14 @@ using namespace app::core;
 
 namespace app::server {
 
+struct StubLogger : ILogger
+{
+    std::ostream& Log(Severity severity) noexcept final
+    {
+        return std::clog;
+    }
+};
+
 struct SenderMock : ISender
 {
     MOCK_METHOD(void, Send, (const std::vector<uint8_t>&));
@@ -28,16 +36,22 @@ protected:
 
 TEST_F(ProtocolHandlerTest, HandleClientTokens)
 {
-    ProtocolHandler protocolHandler{ 
+    std::array tokens{ "aabc", "wwq" };
+
+    ProtocolHandler protocolHandler{
+        std::make_shared<StubLogger>(),
         std::move(m_senderMock),
         boost::asio::ip::tcp::endpoint{ boost::asio::ip::make_address("127.0.0.1"), 33337 }
     };
 
     protocol::RecordBuilder recordBuilder;
     EXPECT_CALL(*m_senderMockPtr, Send(recordBuilder.MakeReadyRecord()));
-    protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeGreetingsRecord("client", 2)));
-    protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeTokenRecord("aabc")));
-    protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeTokenRecord("wwq")));
+    
+    protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeGreetingsRecord("client", tokens.size())));
+    for (const auto& token : tokens)
+    {
+        protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeTokenRecord(token)));
+    }
 }
 
 } // namespace app::server

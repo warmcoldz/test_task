@@ -1,6 +1,7 @@
 #pragma once
 
 #include "record_parser.h"
+#include "logger.h"
 #include <core/range.h>
 #include <boost/asio/ip/tcp.hpp>
 #include <vector>
@@ -17,7 +18,10 @@ struct ISender
 class ProtocolHandler
 {
 public:
-    ProtocolHandler(std::unique_ptr<ISender> sender, const boost::asio::ip::tcp::endpoint& endpoint);
+    ProtocolHandler(
+        std::shared_ptr<ILogger> logger,
+        std::unique_ptr<ISender> sender,
+        const boost::asio::ip::tcp::endpoint& endpoint);
 
 public:
     void ProcessData(core::ConstBlobRange data);
@@ -35,13 +39,13 @@ private:
         Finished
     };
 
+    const std::shared_ptr<ILogger> m_logger;
     const std::unique_ptr<ISender> m_sender;
     const std::string m_ipAddress;
     const uint16_t m_port;
 
     State m_state{ State::WaitingGreetings };
     RecordParser m_recordParser;
-
     std::string m_clientId;
     uint16_t m_tokensToProcess{ 0 };
 };

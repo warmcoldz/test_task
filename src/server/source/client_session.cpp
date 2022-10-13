@@ -28,8 +28,9 @@ private:
 };
 
 
-ClientSession::ClientSession(boost::asio::io_context& ioContext, boost::asio::ip::tcp::socket&& socket)
-    : m_socket{ std::move(socket) }
+ClientSession::ClientSession(std::shared_ptr<ILogger> logger, boost::asio::io_context& ioContext, boost::asio::ip::tcp::socket&& socket)
+    : m_logger{ std::move(logger) }
+    , m_socket{ std::move(socket) }
     , m_strand{ ioContext.get_executor() }
 {
 }
@@ -46,18 +47,19 @@ void ClientSession::Run()
                     static constexpr size_t BufferSize{ 1024 };
                     std::array<uint8_t, BufferSize> buffer;
 
-                    ProtocolHandler handler{ std::make_unique<Sender>(m_socket, yield), m_socket.remote_endpoint() };
+                    ProtocolHandler handler{ m_logger, std::make_unique<Sender>(m_socket, yield), m_socket.remote_endpoint() };
                     while (true)
                     {
+                        boost::system::error_code ec;
                         const std::size_t n{ m_socket.async_read_some(boost::asio::buffer(buffer, BufferSize), yield) };
                         handler.ProcessData(core::MakeConstBlobRange(std::begin(buffer), n));
                     }
                 }
                 catch (const std::exception& e)
                 {
-                    std::cerr << e.what() << std::endl;
+                    m_logger->Log(Severity::Info) << e.what() << std::endl;
                     m_socket.close();
-                    std::cerr << "Connection closed" << std::endl;
+                    m_logger->Log(Severity::Info) << "Connection closed" << std::endl;
                 }
             });
 }
