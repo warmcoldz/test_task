@@ -62,13 +62,22 @@ private:
 
 ProtocolHandler::ProtocolHandler(
         std::shared_ptr<ILogger> logger,
+        std::shared_ptr<ITokenHandler> tokenHandler,
+        std::shared_ptr<IConnectionContainer> connectionRegistrator,
         std::unique_ptr<ISender> sender,
         const boost::asio::ip::tcp::endpoint& endpoint)
     : m_logger{ std::move(logger) }
+    , m_tokenHandler{ std::move(tokenHandler) }
+    , m_connectionRegistrator{ std::move(connectionRegistrator) }
     , m_sender{ std::move(sender) }
     , m_ipAddress{ endpoint.address().to_string() }
     , m_port{ endpoint.port() }
 {
+}
+
+ProtocolHandler::~ProtocolHandler()
+{
+    m_existingConnectionGuard.reset();
 }
 
 void ProtocolHandler::ProcessData(ConstBlobRange data)
@@ -107,14 +116,14 @@ void ProtocolHandler::ProcessGreetings(Record& record)
         << "] received"
         << std::endl;
 
-    protocol::RecordBuilder recordBuilder;
-
-    m_logger->Log(Severity::Info) << "[Ready] sending" << std::endl;
-    m_sender->Send(recordBuilder.MakeReadyRecord());
-    m_logger->Log(Severity::Info) << "[Ready] sending DONE" << std::endl;
-
     m_clientId = greetingsRecord.GetClientId();
     m_tokensToProcess = greetingsRecord.GetTokenCount();
+    m_existingConnectionGuard = std::make_unique<ExistingConnectionGuard>(*m_connectionRegistrator, m_clientId, m_ipAddress, m_port);
+
+    m_logger->Log(Severity::Info) << "[Ready] sending" << std::endl;
+    m_sender->Send(protocol::RecordBuilder{}.MakeReadyRecord());
+    m_logger->Log(Severity::Info) << "[Ready] sending DONE" << std::endl;
+
     m_state = State::WaitingToken;
 }
 
@@ -124,8 +133,10 @@ void ProtocolHandler::ProcessToken(Record& record)
 
     TokenRecord tokenRecord{ record };
     m_logger->Log(Severity::Info) << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
-    --m_tokensToProcess;
+    
+    m_tokenHandler->HandleToken(std::move(tokenRecord.GetToken()));
 
+    --m_tokensToProcess;
     if (m_tokensToProcess == 0)
     {
         m_state = State::Finished;

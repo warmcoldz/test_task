@@ -28,8 +28,15 @@ private:
 };
 
 
-ClientSession::ClientSession(std::shared_ptr<ILogger> logger, boost::asio::io_context& ioContext, boost::asio::ip::tcp::socket&& socket)
+ClientSession::ClientSession(
+        std::shared_ptr<ILogger> logger,
+        std::shared_ptr<ITokenHandler> tokenHandler,
+        std::shared_ptr<IConnectionContainer> connectionRegistrator,
+        boost::asio::io_context& ioContext,
+        boost::asio::ip::tcp::socket&& socket)
     : m_logger{ std::move(logger) }
+    , m_tokenHandler{ std::move(tokenHandler) }
+    , m_connectionRegistrator{ std::move(connectionRegistrator) }
     , m_socket{ std::move(socket) }
     , m_strand{ ioContext.get_executor() }
 {
@@ -47,7 +54,13 @@ void ClientSession::Run()
                     static constexpr size_t BufferSize{ 1024 };
                     std::array<uint8_t, BufferSize> buffer;
 
-                    ProtocolHandler handler{ m_logger, std::make_unique<Sender>(m_socket, yield), m_socket.remote_endpoint() };
+                    ProtocolHandler handler{
+                        m_logger,
+                        m_tokenHandler,
+                        m_connectionRegistrator,
+                        std::make_unique<Sender>(m_socket, yield),
+                        m_socket.remote_endpoint() };
+
                     while (true)
                     {
                         boost::system::error_code ec;

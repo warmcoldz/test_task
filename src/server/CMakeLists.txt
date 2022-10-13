@@ -1,7 +1,9 @@
 set (SOURCES
     source/listen_server.cpp
     source/client_session.cpp
+    source/connection_container.cpp
     source/protocol_handler.cpp
+    source/token_handler.cpp
     source/record_parser.cpp
     source/logger.cpp
 )
