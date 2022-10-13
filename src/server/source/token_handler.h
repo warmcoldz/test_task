@@ -1,5 +1,6 @@
 #pragma once
 
+#include "options.h"
 #include "logger.h"
 #include <string>
 #include <memory>
@@ -12,6 +13,6 @@ struct ITokenHandler
     virtual ~ITokenHandler() = default;
 };
 
-std::shared_ptr<ITokenHandler> CreateTokenHandler(std::shared_ptr<ILogger> logger);
+std::shared_ptr<ITokenHandler> CreateTokenHandler(std::shared_ptr<ILogger> logger, const Options& options);
 
 } // namespace app::server

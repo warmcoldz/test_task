@@ -20,7 +20,6 @@ public:
         , m_tokenHandler{ std::move(tokenHandler )}
         , m_connectionRegistrator{ std::move(connectionRegistrator) }
         , m_options{ options }
-        , m_ioContext{ static_cast<int>(m_options.threadCount) }
     {
     }
 
@@ -70,10 +69,12 @@ private:
 
     void SpawnAcceptorThreads()
     {
-        std::vector<std::thread> threads;
-        threads.reserve(m_options.threadCount);
+        constexpr int AdditionalThreadCount{3};
 
-        for (int i{ 0 }; i < static_cast<int>(m_options.threadCount) - 1; ++i)
+        std::vector<std::thread> threads;
+        threads.reserve(AdditionalThreadCount);
+
+        for (int i{ 0 }; i < AdditionalThreadCount; ++i)
         {
             threads.emplace_back([&]{ m_ioContext.run(); });
         }
@@ -109,8 +110,9 @@ private:
 void RunServer(const Options& options)
 {
     auto logger{ CreateLogger() };
-    auto tokenHandler{ CreateTokenHandler(logger) };
+    auto tokenHandler{ CreateTokenHandler(logger, options) };
     auto connectionRegistrator{ CreateConnectionContainer() };
+
     ListenServer s{ std::move(logger), std::move(tokenHandler), std::move(connectionRegistrator), options };
     s.Run();
 }

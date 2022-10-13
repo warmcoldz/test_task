@@ -10,6 +10,8 @@ struct Options
     uint32_t threadCount;
     std::string ipAddress;
     uint16_t port;
+    std::string handlersStatusDir;
+    uint32_t interval;
 };
 
 } // namespace app::server

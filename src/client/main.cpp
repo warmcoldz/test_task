@@ -42,13 +42,6 @@ struct OptionsTraits
     }
 };
 
-
-void RunClient(const Options& options)
-{
-    Client client{ options };
-    client.Run();
-}
-
 int main(int argc, char* argv[])
 {
     core::ProgramOptionsParser<OptionsTraits> programOptionsParser{ argc, argv };
