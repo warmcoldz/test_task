@@ -50,9 +50,9 @@ public:
         m_token = reader.ReadAsString(length);
     }
 
-    std::string&& GetToken()
+    std::string& GetToken()
     {
-        return std::move(m_token);
+        return m_token;
     }
 
 private:
@@ -97,7 +97,7 @@ void ProtocolHandler::ProcessGreetings(Record& record)
 {
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
-    GreetingsRecord greetingsRecord{ record };
+    const GreetingsRecord greetingsRecord{ record };
     std::clog
         << "[Greetings: client_id=" << greetingsRecord.GetClientId()
         << ", tokens=" << greetingsRecord.GetTokenCount()
@@ -117,12 +117,16 @@ void ProtocolHandler::ProcessGreetings(Record& record)
 
 void ProtocolHandler::ProcessToken(Record& record)
 {
-    CHECK(m_state == State::WaitingToken, "Unexpected token record - waiting other record");
-    CHECK(m_tokensToProcess != 0, "Unexpected token - all tokens handled");
+    CHECK(m_state == State::WaitingToken, "Unexpected token record");
 
     TokenRecord tokenRecord{ record };
     std::clog << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
     --m_tokensToProcess;
+
+    if (m_tokensToProcess == 0)
+    {
+        m_state = State::Finished;
+    }
 }
 
 void ProtocolHandler::ProcessUnexpectedRecord(Record& record)

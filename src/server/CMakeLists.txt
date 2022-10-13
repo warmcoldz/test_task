@@ -19,6 +19,7 @@ target_link_libraries(server server_lib)
 
 add_executable(server_test
     test/record_parser_test.cpp
+    test/protocol_handler_test.cpp
 )
 
 target_link_libraries(server_test server_lib gmock_main)

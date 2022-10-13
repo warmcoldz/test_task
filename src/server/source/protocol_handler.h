@@ -31,7 +31,8 @@ private:
     enum class State
     {
         WaitingGreetings,
-        WaitingToken
+        WaitingToken,
+        Finished
     };
 
     const std::unique_ptr<ISender> m_sender;
