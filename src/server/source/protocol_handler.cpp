@@ -60,14 +60,15 @@ private:
 };
 
 
-ProtocolHandler::ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint)
-    : m_ipAddress{ endpoint.address().to_string() }
+ProtocolHandler::ProtocolHandler(std::unique_ptr<ISender> sender, const boost::asio::ip::tcp::endpoint& endpoint)
+    : m_sender{ std::move(sender) }
+    , m_ipAddress{ endpoint.address().to_string() }
     , m_port{ endpoint.port() }
 {
     std::clog << "Accepted connection from: " << endpoint << std::endl;
 }
 
-void ProtocolHandler::ProcessData(ConstBlobRange data, Sender sendData)
+void ProtocolHandler::ProcessData(ConstBlobRange data)
 {
     while (!data.empty())
     {
@@ -77,7 +78,7 @@ void ProtocolHandler::ProcessData(ConstBlobRange data, Sender sendData)
             switch (record->GetType())
             {
                 case protocol::RecordType::Greetings:
-                    ProcessGreetings(*record, sendData);
+                    ProcessGreetings(*record);
                     break;
 
                 case protocol::RecordType::Token:
@@ -92,7 +93,7 @@ void ProtocolHandler::ProcessData(ConstBlobRange data, Sender sendData)
     }
 }
 
-void ProtocolHandler::ProcessGreetings(Record& record, Sender sendData)
+void ProtocolHandler::ProcessGreetings(Record& record)
 {
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
@@ -106,7 +107,7 @@ void ProtocolHandler::ProcessGreetings(Record& record, Sender sendData)
     protocol::RecordBuilder recordBuilder;
 
     std::clog << "[Ready] sending" << std::endl;
-    sendData(recordBuilder.MakeReadyRecord());
+    m_sender->Send(recordBuilder.MakeReadyRecord());
     std::clog << "[Ready] sending DONE" << std::endl;
 
     m_clientId = greetingsRecord.GetClientId();

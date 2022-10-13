@@ -1,6 +1,7 @@
 #include "options.h"
 #include "listen_server.h"
 #include <core/program_options.h>
+#include <boost/system/system_error.hpp>
 #include <iostream>
 #include <string>
 
@@ -38,13 +39,6 @@ struct OptionsTraits
         return options;
     }
 };
-
-
-void RunServer(const Options& options)
-{
-    ListenServer s{ options };
-    s.Run();
-}
 
 int main(int argc, char* argv[])
 {

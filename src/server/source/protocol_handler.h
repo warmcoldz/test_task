@@ -8,18 +8,22 @@
 
 namespace app::server {
 
-using Sender = std::function<void(const std::vector<uint8_t>&)>;
+struct ISender
+{
+    virtual void Send(const std::vector<uint8_t>& data) = 0;
+    virtual ~ISender() = default;
+};
 
 class ProtocolHandler
 {
 public:
-    explicit ProtocolHandler(const boost::asio::ip::tcp::endpoint& endpoint);
+    ProtocolHandler(std::unique_ptr<ISender> sender, const boost::asio::ip::tcp::endpoint& endpoint);
 
 public:
-    void ProcessData(core::ConstBlobRange data, Sender sendData);
+    void ProcessData(core::ConstBlobRange data);
 
 private:
-    void ProcessGreetings(Record& frame, Sender sendData);
+    void ProcessGreetings(Record& frame);
     void ProcessToken(Record& frame);
     void ProcessUnexpectedRecord(Record& frame);
 
@@ -30,11 +34,12 @@ private:
         WaitingToken
     };
 
+    const std::unique_ptr<ISender> m_sender;
+    const std::string m_ipAddress;
+    const uint16_t m_port;
+
     State m_state{ State::WaitingGreetings };
     RecordParser m_recordParser;
-
-    std::string m_ipAddress;
-    uint16_t m_port;
 
     std::string m_clientId;
     uint16_t m_tokensToProcess{ 0 };
