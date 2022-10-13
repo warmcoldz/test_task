@@ -5,7 +5,6 @@ target_link_libraries(core_lib INTERFACE Boost::program_options)
 
 add_executable(
     common_test
-        test/main.cpp
         test/core/endian_test.cpp
         test/core/network_reader_test.cpp
         test/protocol/record_builder_test.cpp
@@ -14,5 +13,5 @@ add_executable(
 target_link_libraries(
     common_test
         core_lib
-        gmock
+        gmock_main
 )
