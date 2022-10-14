@@ -31,7 +31,7 @@ private:
 };
 
 
-std::shared_ptr<IConnections> CreateConnectionContainer()
+std::shared_ptr<IConnections> CreateConnections()
 {
     return std::make_shared<ConnectionContainer>();
 }

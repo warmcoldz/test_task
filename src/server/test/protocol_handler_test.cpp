@@ -33,7 +33,7 @@ struct MockClientInfo : IClientInfo
     MOCK_METHOD(uint64_t, GetSessionId, (), (const));
 };
 
-struct MockTokenHandler : ITokenHandler
+struct MockTokenHandlerManager : ITokenHandlerManager
 {
     MOCK_METHOD(void, HandleToken, (std::shared_ptr<IClientInfo>, std::string&&));
 };
@@ -52,14 +52,14 @@ class ProtocolHandlerTest : public Test
 public:
     void SetUp() final
     {
-        m_tokenHandlerMock = std::make_shared<NiceMock<MockTokenHandler>>();
+        m_tokenHandlerManager = std::make_shared<NiceMock<MockTokenHandlerManager>>();
         m_stubLogger = std::make_shared<StubLogger>();
     }
 
     void TearDown() final
     {
         m_stubLogger.reset();
-        m_tokenHandlerMock.reset();
+        m_tokenHandlerManager.reset();
     }
 
 protected:
@@ -69,7 +69,7 @@ protected:
     }
 
 protected:
-    std::shared_ptr<NiceMock<MockTokenHandler>> m_tokenHandlerMock;
+    std::shared_ptr<NiceMock<MockTokenHandlerManager>> m_tokenHandlerManager;
     std::shared_ptr<StubLogger> m_stubLogger;
 };
 
@@ -83,7 +83,7 @@ TEST_F(ProtocolHandlerTest, HandleClientTokens)
     ProtocolHandler protocolHandler{
         m_stubLogger,
         std::make_shared<NiceMock<MockClientInfo>>(),
-        m_tokenHandlerMock,
+        m_tokenHandlerManager,
         std::make_shared<StubConnections>(),
         std::move(sender)
     };
@@ -94,7 +94,7 @@ TEST_F(ProtocolHandlerTest, HandleClientTokens)
     protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeGreetingsRecord("client", tokens.size())));
     for (const auto& token : tokens)
     {
-        EXPECT_CALL(*m_tokenHandlerMock, HandleToken(_, std::string{token})).Times(1);
+        EXPECT_CALL(*m_tokenHandlerManager, HandleToken(_, std::string{token})).Times(1);
         protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeTokenRecord(token)));
     }
 }
@@ -103,12 +103,12 @@ TEST_F(ProtocolHandlerTest, SameClientIdDifferentConnectionParameters)
 {
     protocol::RecordBuilder recordBuilder;
 
-    auto connectionContainer{ CreateConnectionContainer() };
+    auto connectionContainer{ CreateConnections() };
 
     ProtocolHandler handler1{
         m_stubLogger,
         std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
-        m_tokenHandlerMock,
+        m_tokenHandlerManager,
         connectionContainer,
         CreateMockSender()
     };
@@ -116,7 +116,7 @@ TEST_F(ProtocolHandlerTest, SameClientIdDifferentConnectionParameters)
     ProtocolHandler handler2{
         m_stubLogger,
         std::make_shared<ClientInfo>(AnotherIp, DefaultPort, 2),
-        m_tokenHandlerMock,
+        m_tokenHandlerManager,
         connectionContainer,
         CreateMockSender()
     };
@@ -129,12 +129,12 @@ TEST_F(ProtocolHandlerTest, SameAllClientParameters)
 {
     protocol::RecordBuilder recordBuilder;
 
-    auto connectionContainer{ CreateConnectionContainer() };
+    auto connectionContainer{ CreateConnections() };
 
     ProtocolHandler handler1{
         m_stubLogger,
         std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
-        m_tokenHandlerMock,
+        m_tokenHandlerManager,
         connectionContainer,
         CreateMockSender()
     };
@@ -142,7 +142,7 @@ TEST_F(ProtocolHandlerTest, SameAllClientParameters)
     ProtocolHandler handler2{
         m_stubLogger,
         std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
-        m_tokenHandlerMock,
+        m_tokenHandlerManager,
         connectionContainer,
         CreateMockSender(),
     };

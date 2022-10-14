@@ -1,6 +1,6 @@
 #include "listen_server.h"
 #include "client_session.h"
-#include "token_handler.h"
+#include "token_handler_manager.h"
 #include "logger.h"
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
@@ -13,12 +13,12 @@ class ListenServer : std::enable_shared_from_this<ListenServer>
 public:
     ListenServer(
             std::shared_ptr<ILogger> logger,
-            std::shared_ptr<ITokenHandler> tokenHandler,
-            std::shared_ptr<IConnections> connectionRegistrator,
+            std::shared_ptr<ITokenHandlerManager> tokenHandlerManager,
+            std::shared_ptr<IConnections> connections,
             const Options& options)
         : m_logger{ std::move(logger) }
-        , m_tokenHandler{ std::move(tokenHandler )}
-        , m_connectionRegistrator{ std::move(connectionRegistrator) }
+        , m_tokenHandlerManager{ std::move(tokenHandlerManager )}
+        , m_connections{ std::move(connections) }
         , m_options{ options }
     {
     }
@@ -59,8 +59,8 @@ private:
                             std::make_shared<ClientSession>(
                                 std::move(sessionLogger),
                                 std::make_shared<ClientInfo>(socket.remote_endpoint().address().to_string(), socket.remote_endpoint().port(), sessionNumber),
-                                m_tokenHandler,
-                                m_connectionRegistrator,
+                                m_tokenHandlerManager,
+                                m_connections,
                                 m_ioContext,
                                 std::move(socket))->Run();
                         }
@@ -101,8 +101,8 @@ private:
 
 private:
     const std::shared_ptr<ILogger> m_logger;
-    const std::shared_ptr<ITokenHandler> m_tokenHandler;
-    const std::shared_ptr<IConnections> m_connectionRegistrator;
+    const std::shared_ptr<ITokenHandlerManager> m_tokenHandlerManager;
+    const std::shared_ptr<IConnections> m_connections;
     const Options m_options;
     boost::asio::io_context m_ioContext;
 };
@@ -111,10 +111,10 @@ private:
 void RunServer(const Options& options)
 {
     auto logger{ CreateLogger(options.consoleLog) };
-    auto tokenHandler{ CreateTokenHandler(logger, options) };
-    auto connectionRegistrator{ CreateConnectionContainer() };
+    auto tokenHandlerManager{ CreateTokenHandlerManager(logger, options) };
+    auto connections{ CreateConnections() };
 
-    ListenServer s{ std::move(logger), std::move(tokenHandler), std::move(connectionRegistrator), options };
+    ListenServer s{ std::move(logger), std::move(tokenHandlerManager), std::move(connections), options };
     s.Run();
 }
 

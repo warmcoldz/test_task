@@ -3,6 +3,8 @@ set (SOURCES
     source/client_session.cpp
     source/connections.cpp
     source/protocol_handler.cpp
+    source/token_handler_state_logger.cpp
+    source/token_handler_manager.cpp
     source/token_handler.cpp
     source/record_parser.cpp
     source/logger.cpp

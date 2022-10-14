@@ -31,13 +31,13 @@ private:
 ClientSession::ClientSession(
         std::shared_ptr<ILogger> logger,
         std::shared_ptr<IClientInfo> clientInfo,
-        std::shared_ptr<ITokenHandler> tokenHandler,
+        std::shared_ptr<ITokenHandlerManager> tokenHandlerManager,
         std::shared_ptr<IConnections> connections,
         boost::asio::io_context& ioContext,
         boost::asio::ip::tcp::socket&& socket)
     : m_logger{ std::move(logger) }
     , m_clientInfo{ std::move(clientInfo) }
-    , m_tokenHandler{ std::move(tokenHandler) }
+    , m_tokenHandlerManager{ std::move(tokenHandlerManager) }
     , m_connections{ std::move(connections) }
     , m_socket{ std::move(socket) }
     , m_strand{ ioContext.get_executor() }
@@ -59,7 +59,7 @@ void ClientSession::Run()
                     ProtocolHandler handler{
                         m_logger,
                         m_clientInfo,
-                        m_tokenHandler,
+                        m_tokenHandlerManager,
                         m_connections,
                         std::make_unique<Sender>(m_socket, yield)};
 

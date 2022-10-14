@@ -36,6 +36,6 @@ private:
     IClientInfo& m_clientInfo;
 };
 
-std::shared_ptr<IConnections> CreateConnectionContainer();
+std::shared_ptr<IConnections> CreateConnections();
 
 } // namespace app::server
