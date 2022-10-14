@@ -12,10 +12,10 @@ Type Enum {
 
 ```
 PROTOCOL Record {
-  RecordLength (2),
+  PayloadLength (2),
   Type (1)
   
-  Record Payload (RecordLength),
+  Record Payload (PayloadLength),
 }
 ```
 
