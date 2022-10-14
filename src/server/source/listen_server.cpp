@@ -14,7 +14,7 @@ public:
     ListenServer(
             std::shared_ptr<ILogger> logger,
             std::shared_ptr<ITokenHandler> tokenHandler,
-            std::shared_ptr<IConnectionContainer> connectionRegistrator,
+            std::shared_ptr<IConnections> connectionRegistrator,
             const Options& options)
         : m_logger{ std::move(logger) }
         , m_tokenHandler{ std::move(tokenHandler )}
@@ -58,6 +58,7 @@ private:
 
                             std::make_shared<ClientSession>(
                                 std::move(sessionLogger),
+                                std::make_shared<ClientInfo>(socket.remote_endpoint().address().to_string(), socket.remote_endpoint().port(), sessionNumber),
                                 m_tokenHandler,
                                 m_connectionRegistrator,
                                 m_ioContext,
@@ -101,7 +102,7 @@ private:
 private:
     const std::shared_ptr<ILogger> m_logger;
     const std::shared_ptr<ITokenHandler> m_tokenHandler;
-    const std::shared_ptr<IConnectionContainer> m_connectionRegistrator;
+    const std::shared_ptr<IConnections> m_connectionRegistrator;
     const Options m_options;
     boost::asio::io_context m_ioContext;
 };
@@ -109,7 +110,7 @@ private:
 
 void RunServer(const Options& options)
 {
-    auto logger{ CreateLogger() };
+    auto logger{ CreateLogger(options.consoleLog) };
     auto tokenHandler{ CreateTokenHandler(logger, options) };
     auto connectionRegistrator{ CreateConnectionContainer() };
 

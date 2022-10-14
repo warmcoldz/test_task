@@ -3,21 +3,31 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <iomanip>
 
 namespace app::server {
 
 class Logger : public ILogger
 {
 public:
+    explicit Logger(bool enableConsoleLog)
+    {
+        if (!enableConsoleLog)
+        {
+            std::cout.rdbuf(nullptr);
+        }
+    }
+
+public:
     std::ostream& Log(Severity severity) noexcept final
     {
         // TODO: Make async logger to reduce IO load and fix interleaving of messages
 
-        std::clog
+        const auto time{ std::time(nullptr) };
+        return std::cout
+            << std::put_time(std::localtime(&time), "%F_%T") << '\t'
             << std::this_thread::get_id() << '\t'
             << GetSeverityText(severity) << '\t';
-
-        return std::clog;
     }
 
 private:
@@ -59,9 +69,9 @@ private:
 };
 
 
-std::shared_ptr<ILogger> CreateLogger()
+std::shared_ptr<ILogger> CreateLogger(bool enableConsoleLog)
 {
-    return std::make_shared<Logger>();
+    return std::make_shared<Logger>(enableConsoleLog);
 }
 
 std::shared_ptr<ILogger> CreateLoggerWithPrefix(std::shared_ptr<ILogger> logger, const std::string& prefix)

@@ -62,16 +62,15 @@ private:
 
 ProtocolHandler::ProtocolHandler(
         std::shared_ptr<ILogger> logger,
+        std::shared_ptr<IClientInfo> clientInfo,
         std::shared_ptr<ITokenHandler> tokenHandler,
-        std::shared_ptr<IConnectionContainer> connectionRegistrator,
-        std::unique_ptr<ISender> sender,
-        const boost::asio::ip::tcp::endpoint& endpoint)
+        std::shared_ptr<IConnections> connectionRegistrator,
+        std::unique_ptr<ISender> sender)
     : m_logger{ std::move(logger) }
+    , m_clientInfo{ std::move(clientInfo) }
     , m_tokenHandler{ std::move(tokenHandler) }
     , m_connectionRegistrator{ std::move(connectionRegistrator) }
     , m_sender{ std::move(sender) }
-    , m_ipAddress{ endpoint.address().to_string() }
-    , m_port{ endpoint.port() }
 {
 }
 
@@ -110,15 +109,20 @@ void ProtocolHandler::ProcessGreetings(Record& record)
     CHECK(m_state == State::WaitingGreetings, "Expected Greetings record");
 
     const GreetingsRecord greetingsRecord{ record };
-    m_logger->Log(Severity::Info)
-        << "[Greetings: client_id=" << greetingsRecord.GetClientId()
-        << ", tokens=" << greetingsRecord.GetTokenCount()
-        << "] received"
-        << std::endl;
 
-    m_clientId = greetingsRecord.GetClientId();
-    m_tokensToProcess = greetingsRecord.GetTokenCount();
-    m_existingConnectionGuard = std::make_unique<ExistingConnectionGuard>(*m_connectionRegistrator, m_clientId, m_ipAddress, m_port);
+    const auto& clientId{ greetingsRecord.GetClientId() };
+    uint16_t tokenCount{ greetingsRecord.GetTokenCount() };
+
+    m_logger->Log(Severity::Info)
+        << "[Greetings: client_id=" << clientId
+        << ", tokens=" << tokenCount
+        << "] received" << std::endl;
+
+    m_clientInfo->SetClientId(clientId);
+    m_clientInfo->SetExpectedTokens(tokenCount);
+    m_tokensToProcess = tokenCount;
+
+    m_existingConnectionGuard = std::make_unique<ExistingConnectionGuard>(*m_connectionRegistrator, *m_clientInfo);
 
     m_logger->Log(Severity::Info) << "[Ready] sending" << std::endl;
     m_sender->Send(protocol::RecordBuilder{}.MakeReadyRecord());
@@ -134,7 +138,7 @@ void ProtocolHandler::ProcessToken(Record& record)
     TokenRecord tokenRecord{ record };
     m_logger->Log(Severity::Info) << "[Token: " << tokenRecord.GetToken() << "] received" << std::endl;
     
-    m_tokenHandler->HandleToken(std::move(tokenRecord.GetToken()));
+    m_tokenHandler->HandleToken(m_clientInfo, std::move(tokenRecord.GetToken()));
 
     --m_tokensToProcess;
     if (m_tokensToProcess == 0)

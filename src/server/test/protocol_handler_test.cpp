@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <source/protocol_handler.h>
+#include <source/client_info.h>
 #include <protocol/record_builder.h>
 
 using namespace app::core;
+using namespace ::testing;
+using namespace std::string_literals;
 
 namespace app::server {
 
@@ -15,9 +18,24 @@ struct StubLogger : ILogger
     }
 };
 
+struct StubConnections : IConnections
+{
+    void CheckAddConnection(IClientInfo& clientInfo) final { };
+    void RemoveConnection(IClientInfo& clientInfo) final { } ;
+};
+
+struct MockClientInfo : IClientInfo
+{
+    MOCK_METHOD(void, SetExpectedTokens, (uint16_t));
+    MOCK_METHOD(uint16_t, GetExpectedTokenCount, (), (const));
+    MOCK_METHOD(void, SetClientId, (std::string));
+    MOCK_METHOD(const ClientConnectionInfo&, GetClientConnectionInfo, (), (const));
+    MOCK_METHOD(uint64_t, GetSessionId, (), (const));
+};
+
 struct MockTokenHandler : ITokenHandler
 {
-    MOCK_METHOD(void, HandleToken, (std::string&&));
+    MOCK_METHOD(void, HandleToken, (std::shared_ptr<IClientInfo>, std::string&&));
 };
 
 struct MockSender : ISender
@@ -25,43 +43,34 @@ struct MockSender : ISender
     MOCK_METHOD(void, Send, (const std::vector<uint8_t>&));
 };
 
-struct StubConnectionContainer : IConnectionContainer
-{
-    void RegisterConnection(const std::string&, const std::string&, uint16_t)
-    {
-    }
-
-    void UnregisterConnection(const std::string&, const std::string&, uint16_t)
-    {
-    }
-};
-
 constexpr uint16_t DefaultPort{ 12345 };
-const auto DefaultIp{ boost::asio::ip::make_address("192.168.1.2") };
-const auto AnotherIp{ boost::asio::ip::make_address("192.168.1.3") };
-const boost::asio::ip::tcp::endpoint DefaultEndpoint{ DefaultIp, DefaultPort };
+const auto DefaultIp{ "192.168.1.2"s };
+const auto AnotherIp{ "192.168.1.3"s };
 
-class ProtocolHandlerTest : public ::testing::Test
+class ProtocolHandlerTest : public Test
 {
 public:
     void SetUp() final
     {
-        m_tokenHandlerMock = std::make_shared<MockTokenHandler>();
+        m_tokenHandlerMock = std::make_shared<NiceMock<MockTokenHandler>>();
+        m_stubLogger = std::make_shared<StubLogger>();
     }
 
     void TearDown() final
     {
+        m_stubLogger.reset();
         m_tokenHandlerMock.reset();
     }
 
 protected:
-    std::unique_ptr<::testing::NiceMock<MockSender>> CreateMockSender()
+    std::unique_ptr<NiceMock<MockSender>> CreateMockSender()
     {
-        return std::make_unique<::testing::NiceMock<MockSender>>();
+        return std::make_unique<NiceMock<MockSender>>();
     }
 
 protected:
-    std::shared_ptr<MockTokenHandler> m_tokenHandlerMock;
+    std::shared_ptr<NiceMock<MockTokenHandler>> m_tokenHandlerMock;
+    std::shared_ptr<StubLogger> m_stubLogger;
 };
 
 TEST_F(ProtocolHandlerTest, HandleClientTokens)
@@ -72,11 +81,11 @@ TEST_F(ProtocolHandlerTest, HandleClientTokens)
     auto& senderRef{ *sender };
 
     ProtocolHandler protocolHandler{
-        std::make_shared<StubLogger>(),
+        m_stubLogger,
+        std::make_shared<NiceMock<MockClientInfo>>(),
         m_tokenHandlerMock,
-        std::make_shared<StubConnectionContainer>(),
-        std::move(sender),
-        boost::asio::ip::tcp::endpoint{ DefaultIp, 12345 }
+        std::make_shared<StubConnections>(),
+        std::move(sender)
     };
 
     protocol::RecordBuilder recordBuilder;
@@ -85,7 +94,7 @@ TEST_F(ProtocolHandlerTest, HandleClientTokens)
     protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeGreetingsRecord("client", tokens.size())));
     for (const auto& token : tokens)
     {
-        EXPECT_CALL(*m_tokenHandlerMock, HandleToken(std::string{token})).Times(1);
+        EXPECT_CALL(*m_tokenHandlerMock, HandleToken(_, std::string{token})).Times(1);
         protocolHandler.ProcessData(MakeConstBlobRange(recordBuilder.MakeTokenRecord(token)));
     }
 }
@@ -97,19 +106,19 @@ TEST_F(ProtocolHandlerTest, SameClientIdDifferentConnectionParameters)
     auto connectionContainer{ CreateConnectionContainer() };
 
     ProtocolHandler handler1{
-        std::make_shared<StubLogger>(),
+        m_stubLogger,
+        std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
         m_tokenHandlerMock,
         connectionContainer,
-        CreateMockSender(),
-        DefaultEndpoint
+        CreateMockSender()
     };
 
     ProtocolHandler handler2{
-        std::make_shared<StubLogger>(),
+        m_stubLogger,
+        std::make_shared<ClientInfo>(AnotherIp, DefaultPort, 2),
         m_tokenHandlerMock,
         connectionContainer,
-        CreateMockSender(),
-        boost::asio::ip::tcp::endpoint{ AnotherIp, 12346 }
+        CreateMockSender()
     };
 
     handler1.ProcessData(MakeConstBlobRange(recordBuilder.MakeGreetingsRecord("client", 1)));
@@ -121,22 +130,21 @@ TEST_F(ProtocolHandlerTest, SameAllClientParameters)
     protocol::RecordBuilder recordBuilder;
 
     auto connectionContainer{ CreateConnectionContainer() };
-    auto logger{ std::make_shared<StubLogger>() };
 
     ProtocolHandler handler1{
-        logger,
+        m_stubLogger,
+        std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
         m_tokenHandlerMock,
         connectionContainer,
-        CreateMockSender(),
-        DefaultEndpoint
+        CreateMockSender()
     };
 
     ProtocolHandler handler2{
-        std::move(logger),
+        m_stubLogger,
+        std::make_shared<ClientInfo>(DefaultIp, DefaultPort, 1),
         m_tokenHandlerMock,
         connectionContainer,
         CreateMockSender(),
-        DefaultEndpoint
     };
 
     const auto greetingsRecord{ recordBuilder.MakeGreetingsRecord("client", 1) };

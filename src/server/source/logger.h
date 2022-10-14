@@ -18,7 +18,7 @@ struct ILogger
     ~ILogger() = default;
 };
 
-std::shared_ptr<ILogger> CreateLogger();
+std::shared_ptr<ILogger> CreateLogger(bool enableConsoleLog);
 std::shared_ptr<ILogger> CreateLoggerWithPrefix(std::shared_ptr<ILogger> logger, const std::string& prefix);
 
 } // namespace app::server

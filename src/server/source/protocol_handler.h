@@ -1,7 +1,8 @@
 #pragma once
 
 #include "token_handler.h"
-#include "connection_container.h"
+#include "client_info.h"
+#include "connections.h"
 #include "logger.h"
 #include "record_parser.h"
 #include <core/range.h>
@@ -22,10 +23,10 @@ class ProtocolHandler
 public:
     ProtocolHandler(
         std::shared_ptr<ILogger> logger,
+        std::shared_ptr<IClientInfo> clientInfo,
         std::shared_ptr<ITokenHandler> tokenHandler,
-        std::shared_ptr<IConnectionContainer> connectionRegistrator,
-        std::unique_ptr<ISender> sender,
-        const boost::asio::ip::tcp::endpoint& endpoint);
+        std::shared_ptr<IConnections> connectionRegistrator,
+        std::unique_ptr<ISender> sender);
 
     ~ProtocolHandler();
 
@@ -47,10 +48,9 @@ private:
 
     const std::shared_ptr<ILogger> m_logger;
     const std::shared_ptr<ITokenHandler> m_tokenHandler;
-    const std::shared_ptr<IConnectionContainer> m_connectionRegistrator;
+    const std::shared_ptr<IConnections> m_connectionRegistrator;
     const std::unique_ptr<ISender> m_sender;
-    const std::string m_ipAddress;
-    const uint16_t m_port;
+    const std::shared_ptr<IClientInfo> m_clientInfo;
 
     State m_state{ State::WaitingGreetings };
     RecordParser m_recordParser;

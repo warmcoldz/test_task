@@ -25,8 +25,9 @@ struct OptionsTraits
             ("threads,t", boost::program_options::value<decltype(Options::threadCount)>()->default_value(DefaultThreadCount), "thread count.")
             ("ip", boost::program_options::value<decltype(Options::ipAddress)>()->default_value(IpAddressAny), "ip address.")
             ("port,p", boost::program_options::value<decltype(Options::port)>()->default_value(DefaultPort), "listen on a port.")
-            //("handlers_status_dir,p", boost::program_options::value<decltype(Options::handlersStatusDir)>()->required(), "handlers status directory path.")
-            ("interval,i", boost::program_options::value<decltype(Options::interval)>()->default_value(1), "handlers status dump interval.")
+            ("handlers_status_dir,p", boost::program_options::value<decltype(Options::handlersStatusDir)>()->required(), "handlers status directory path.")
+            ("interval,i", boost::program_options::value<decltype(Options::interval)>()->default_value(10), "handlers status dump interval in seconds.")
+            ("console_log", boost::program_options::value<decltype(Options::consoleLog)>()->default_value(false), "enable console log.")
         ;
 
         return desc;
@@ -38,8 +39,9 @@ struct OptionsTraits
         options.threadCount = vm["threads"s].as<decltype(options.threadCount)>();
         options.ipAddress = vm["ip"s].as<decltype(options.ipAddress)>();
         options.port = vm["port"s].as<decltype(options.port)>();
-        //options.handlersStatusDir = vm["handlers_status_dir"s].as<decltype(options.handlersStatusDir)>();
+        options.handlersStatusDir = vm["handlers_status_dir"s].as<decltype(options.handlersStatusDir)>();
         options.interval = vm["interval"s].as<decltype(options.interval)>();
+        options.consoleLog = vm["console_log"s].as<decltype(options.consoleLog)>();
         return options;
     }
 };

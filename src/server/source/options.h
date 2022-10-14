@@ -12,6 +12,7 @@ struct Options
     uint16_t port;
     std::string handlersStatusDir;
     uint32_t interval;
+    bool consoleLog;
 };
 
 } // namespace app::server
