@@ -54,7 +54,6 @@ private:
 
     State m_state{ State::WaitingGreetings };
     RecordParser m_recordParser;
-    std::string m_clientId;
     uint16_t m_tokensToProcess{ 0 };
     std::unique_ptr<ExistingConnectionGuard> m_existingConnectionGuard;
 };

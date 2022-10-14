@@ -27,7 +27,7 @@ bool RecordParser::CollectHeader(ConstBlobRange& data)
     ASSERT(!IsHeaderCollected());
 
     const size_t appendHeaderSize{ std::min(RecordHeaderSize - m_headerBufferSize, data.size()) };
-    std::copy(data.begin(), data.begin() + appendHeaderSize, std::begin(m_headerBuffer));
+    std::copy(data.begin(), data.begin() + appendHeaderSize, std::begin(m_headerBuffer) + m_headerBufferSize);
     data.advance_begin(appendHeaderSize);
     m_headerBufferSize += appendHeaderSize;
 
